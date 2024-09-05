@@ -12,10 +12,11 @@ struct PuzzleState {
     vector<vector<int>> board;
     pair<int, int> zeroPos;  // Position of the empty space
     vector<string> path;     // Stores the path of moves
+    int g = 0, h; //G(h) and the heuristic
 
     // Compare states based on the board configuration
     bool operator<(const PuzzleState& other) const {
-        return board < other.board;
+        return (g + h) > (other.g + other.h);
     }
 };
 
@@ -29,6 +30,21 @@ const vector<vector<int>> goalState = {
 // Check if the board is the goal state
 bool isGoalState(const vector<vector<int>>& board) {
     return board == goalState;
+}
+
+//Heuristic Function
+int getHeuristic(vector<vector<int>> board) {
+    int heuristic = 0;
+    for(int i = 0; i < board.size();i++) {
+        for(int j = 0; j < board.size();j++) {
+            int value = board[i][j];
+            //Using Manhattan distance
+            int goalX = (value-1) / 3;
+            int goalY = (value-1) % 3;
+            heuristic += abs(i-goalX) + abs(j-goalY);
+        }
+    }
+    return heuristic;
 }
 
 // Generate possible moves from the current state
@@ -47,15 +63,19 @@ vector<PuzzleState> generateMoves(const PuzzleState& current) {
             swap(newState.board[x][y], newState.board[newX][newY]);
             newState.zeroPos = {newX, newY};
             newState.path.push_back(moveNames[i]);  // Record the move
+            newState.g++;
+            newState.h = getHeuristic(newState.board);
             moves.push_back(newState);
         }
     }
     return moves;
 }
 
+
+
 // BFS algorithm to solve the puzzle
 void solvePuzzle(const vector<vector<int>>& initialBoard) {
-    queue<PuzzleState> q;
+    priority_queue<PuzzleState> q; //Min ordered
     set<vector<vector<int>>> visited;
 
     PuzzleState initialState;
@@ -75,7 +95,7 @@ void solvePuzzle(const vector<vector<int>>& initialBoard) {
     visited.insert(initialState.board);
 
     while (!q.empty()) {
-        PuzzleState current = q.front();
+        PuzzleState current = q.top();
         q.pop();
 
         if (isGoalState(current.board)) {
