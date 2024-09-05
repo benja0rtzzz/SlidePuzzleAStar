@@ -1,0 +1,3 @@
+/Users/benjaminortiz/CLionProjects/SlidePuzzleAStar/cmake-build-debug/CMakeFiles/AStarAlgorithm.dir
+/Users/benjaminortiz/CLionProjects/SlidePuzzleAStar/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/benjaminortiz/CLionProjects/SlidePuzzleAStar/cmake-build-debug/CMakeFiles/rebuild_cache.dir
