@@ -21,26 +21,76 @@ struct PuzzleState {
 };
 
 // Goal state for a 3x3 puzzle
-const vector<vector<int>> goalState = {
-    {1, 2, 3},
-    {4, 5, 6},
-    {7, 8, 0}
-};
+vector<vector<int>> getWinning(int n) {
+    vector<vector<int>> actualMatrix(n, vector<int>(n));
+    int value = 1;
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n;j++) {
+            actualMatrix[i][j] = value;
+            value++;
+        }
+    }
+    actualMatrix[n-1][n-1] = 0;
+
+    return actualMatrix;
+}
 
 // Check if the board is the goal state
-bool isGoalState(const vector<vector<int>>& board) {
-    return board == goalState;
+bool isGoalState(const vector<vector<int>>& board, const vector<vector<int>>& goalState) {
+    int boardSize = board.size();
+    for(int i = 0; i < boardSize;i++) {
+        for(int j = 0; j < boardSize;j++) {
+            if(board[i][j] != goalState[i][j]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool es_resoluble(const vector<vector<int>>& tablero) {
+    vector<int> flat;
+    int n = tablero.size();
+    int fila_vacia = 0;  // Fila donde está el 0 (vacío)
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (tablero[i][j] == 0) {
+                fila_vacia = i;
+            } else {
+                flat.push_back(tablero[i][j]);
+            }
+        }
+    }
+
+    // Contar las inversiones
+    int inversiones = 0;
+    for (int i = 0; i < flat.size(); ++i) {
+        for (int j = i + 1; j < flat.size(); ++j) {
+            if (flat[i] > flat[j]) {
+                inversiones++;
+            }
+        }
+    }
+
+    // En un tablero 4x4, si el número de inversiones es par y el vacío está en una fila impar desde abajo, es resoluble
+    if (n % 2 == 0) {
+        return (inversiones % 2 == 0) == ((n - fila_vacia) % 2 == 1);
+    }
+    return inversiones % 2 == 0;
 }
 
 //Heuristic Function
 int getHeuristic(vector<vector<int>> board) {
     int heuristic = 0;
-    for(int i = 0; i < board.size();i++) {
-        for(int j = 0; j < board.size();j++) {
+    int boardSize = board.size();
+    for(int i = 0; i < boardSize;i++) {
+        for(int j = 0; j < boardSize;j++) {
             int value = board[i][j];
             //Using Manhattan distance
-            int goalX = (value-1) / 3;
-            int goalY = (value-1) % 3;
+            if (value == 0) continue;  // Skip the empty space
+            int goalX = (value-1) / boardSize;
+            int goalY = (value-1) % boardSize;
             heuristic += abs(i-goalX) + abs(j-goalY);
         }
     }
@@ -48,17 +98,18 @@ int getHeuristic(vector<vector<int>> board) {
 }
 
 // Generate possible moves from the current state
-vector<PuzzleState> generateMoves(const PuzzleState& current) {
+vector<PuzzleState> generateMoves(const PuzzleState current) {
     vector<PuzzleState> moves;
     int x = current.zeroPos.first;
     int y = current.zeroPos.second;
+    int currentSize = current.board.size();
     vector<pair<int, int>> directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};  // Up, Down, Left, Right
     vector<string> moveNames = {"Up", "Down", "Left", "Right"};
 
-    for (int i = 0; i < directions.size(); ++i) {
+    for (int i = 0; i < 4; ++i) {
         int newX = x + directions[i].first;
         int newY = y + directions[i].second;
-        if (newX >= 0 && newX < 3 && newY >= 0 && newY < 3) {
+        if (newX >= 0 && newX < currentSize && newY >= 0 && newY < currentSize) {
             PuzzleState newState = current;
             swap(newState.board[x][y], newState.board[newX][newY]);
             newState.zeroPos = {newX, newY};
@@ -74,16 +125,17 @@ vector<PuzzleState> generateMoves(const PuzzleState& current) {
 
 
 // BFS algorithm to solve the puzzle
-void solvePuzzle(const vector<vector<int>>& initialBoard) {
+void solvePuzzle(const vector<vector<int>>& initialBoard, const vector<vector<int>>& winningBoard) {
+    if(!es_resoluble(initialBoard)) return;
     priority_queue<PuzzleState> q; //Min ordered
     set<vector<vector<int>>> visited;
 
     PuzzleState initialState;
     initialState.board = initialBoard;
-
+    int sizeOfBoard = initialBoard.size();
     // Find the initial position of zero
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
+    for (int i = 0; i < sizeOfBoard; ++i) {
+        for (int j = 0; j < sizeOfBoard; ++j) {
             if (initialBoard[i][j] == 0) {
                 initialState.zeroPos = {i, j};
                 break;
@@ -98,7 +150,7 @@ void solvePuzzle(const vector<vector<int>>& initialBoard) {
         PuzzleState current = q.top();
         q.pop();
 
-        if (isGoalState(current.board)) {
+        if (current.board == winningBoard) {
             cout << "Solved in " << current.path.size() << " moves." << endl;
             for (const string& move : current.path) {
                 cout << move << " ";
@@ -123,12 +175,24 @@ void solvePuzzle(const vector<vector<int>>& initialBoard) {
 }
 
 int main() {
-    vector<vector<int>> initialBoard = {
-        {5,8,3}, {1,0,4}, {7,6,2}
-    };
+
+    int n;
+    cin >> n;
+    vector<vector<int>> winningCombination = getWinning(n);
+
+    vector<vector<int>> initialCombination(n, vector<int>(n));
+
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n;j++) {
+            cin >> initialCombination[i][j];
+        }
+    }
     auto start = high_resolution_clock::now();
 
-    solvePuzzle(initialBoard);
+    /*
+     * test case: 3 2 3 6 5 4 8 1 7 0 ctrl+c ctrl+v
+     */
+    solvePuzzle(initialCombination, winningCombination);
 
     // Get ending timepoint
     auto stop = high_resolution_clock::now();
