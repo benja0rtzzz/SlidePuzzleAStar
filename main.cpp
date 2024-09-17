@@ -48,37 +48,38 @@ bool isGoalState(const vector<vector<int>>& board, const vector<vector<int>>& go
     return true;
 }
 
-bool es_resoluble(const vector<vector<int>>& tablero) {
+bool is_solvable(const vector<vector<int>>& board) {
     vector<int> flat;
-    int n = tablero.size();
-    int fila_vacia = 0;  // Fila donde está el 0 (vacío)
+    int n = board.size();
+    int empty_row = 0;  // Row where the 0 (empty space) is located
 
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            if (tablero[i][j] == 0) {
-                fila_vacia = i;
+            if (board[i][j] == 0) {
+                empty_row = i;
             } else {
-                flat.push_back(tablero[i][j]);
+                flat.push_back(board[i][j]);
             }
         }
     }
 
-    // Contar las inversiones
-    int inversiones = 0;
+    // Count the inversions
+    int inversions = 0;
     for (int i = 0; i < flat.size(); ++i) {
         for (int j = i + 1; j < flat.size(); ++j) {
             if (flat[i] > flat[j]) {
-                inversiones++;
+                inversions++;
             }
         }
     }
 
-    // En un tablero 4x4, si el número de inversiones es par y el vacío está en una fila impar desde abajo, es resoluble
+    // In a 4x4 board, if the number of inversions is even and the empty space is in an odd row from the bottom, it's solvable
     if (n % 2 == 0) {
-        return (inversiones % 2 == 0) == ((n - fila_vacia) % 2 == 1);
+        return (inversions % 2 == 0) == ((n - empty_row) % 2 == 1);
     }
-    return inversiones % 2 == 0;
+    return inversions % 2 == 0;
 }
+
 
 //Heuristic Function
 int getHeuristic(vector<vector<int>> board) {
@@ -126,7 +127,7 @@ vector<PuzzleState> generateMoves(const PuzzleState current) {
 
 // BFS algorithm to solve the puzzle
 void solvePuzzle(const vector<vector<int>>& initialBoard, const vector<vector<int>>& winningBoard) {
-    if(!es_resoluble(initialBoard)) return;
+    if(!is_solvable(initialBoard)) return;
     priority_queue<PuzzleState> q; //Min ordered
     set<vector<vector<int>>> visited;
 
